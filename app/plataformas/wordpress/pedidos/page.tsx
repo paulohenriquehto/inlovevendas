@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DateFilter, PeriodFilter, DateRange, filterByPeriod } from '@/components/DateFilter';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle, MapPin } from 'lucide-react';
 import { OrderDetailsModal } from '@/components/OrderDetailsModal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function WordPressPedidosPage() {
   const [allItems, setAllItems] = useState<Venda[]>([]); // Todos os itens (para modal)
@@ -25,6 +26,18 @@ export default function WordPressPedidosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string>('');
   const [selectedOrderItems, setSelectedOrderItems] = useState<Venda[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -152,6 +165,16 @@ export default function WordPressPedidosPage() {
           </p>
         </div>
 
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertTriangle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>Informação:</strong> Os emails{' '}
+            <code className="bg-blue-100 px-1.5 py-0.5 rounded text-xs font-semibold">inlovespmarket@gmail.com</code> e{' '}
+            <code className="bg-blue-100 px-1.5 py-0.5 rounded text-xs font-semibold">inloveshoppingd@gmail.com</code>{' '}
+            foram utilizados para o sistema de vendas internas da loja. Por isso, há diversos pedidos cadastrados nesses emails.
+          </AlertDescription>
+        </Alert>
+
         <DateFilter selectedPeriod={selectedPeriod} onPeriodChange={setSelectedPeriod} customDateRange={customDateRange} onDateRangeChange={setCustomDateRange} />
 
         <Card>
@@ -174,8 +197,10 @@ export default function WordPressPedidosPage() {
             <CardTitle>Detalhes dos Pedidos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
+            {/* Desktop: Tabela */}
+            {!isMobile ? (
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Pedido</TableHead>
@@ -223,13 +248,9 @@ export default function WordPressPedidosPage() {
                       </TableCell>
                       <TableCell className="font-medium">{formatCurrency(venda.total)}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          venda.statusPagamento === 'Confirmado'
-                            ? 'bg-green-100 text-green-800'
-                            : venda.statusPagamento === 'Pendente'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>{venda.statusPagamento}</span>
+                        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                          Confirmado
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs">{formatDate(venda.dataPagamento)}</span>
@@ -241,30 +262,122 @@ export default function WordPressPedidosPage() {
                 </TableBody>
               </Table>
             </div>
+            ) : (
+              /* Mobile: Cards */
+              <div className="space-y-4">
+                {currentVendas.map((venda, index) => (
+                  <div
+                    key={`${venda.numeroPedido}-${index}`}
+                    className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => handleOrderClick(venda.numeroPedido)}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-bold text-lg">#{venda.numeroPedido}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(venda.data)}</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">
+                        Confirmado
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium">{venda.nomeComprador}</p>
+                        <p className="text-xs text-muted-foreground">{venda.email}</p>
+                        <p className="text-xs font-mono text-muted-foreground mt-1">{maskCPF(venda.cpfCnpj)}</p>
+                      </div>
+
+                      {venda.primeiraCompraCliente && (
+                        <Badge variant="default" className="text-xs">
+                          Novo Cliente - {venda.totalPedidosCliente || 1} pedido(s)
+                        </Badge>
+                      )}
+
+                      <div className="flex items-center gap-1 text-sm">
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                        {venda.cidade && venda.estado ? (
+                          <span>{venda.cidade}, {venda.estado}</span>
+                        ) : (
+                          <span className="italic text-muted-foreground">Retirada em loja</span>
+                        )}
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <span className="text-sm text-muted-foreground">Total</span>
+                        <span className="font-bold text-lg">{formatCurrency(venda.total)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Envio: {venda.statusEnvio}</span>
+                        {venda.canal && <span>Canal: {venda.canal}</span>}
+                      </div>
+
+                      {venda.dataPagamento && (
+                        <p className="text-xs text-muted-foreground">
+                          Pago em: {formatDate(venda.dataPagamento)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">Mostrando {startIndex + 1} a {Math.min(endIndex, filteredVendas.length)} de {filteredVendas.length} pedidos</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Anterior</Button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-3">
+                <p className="hidden md:block text-sm text-muted-foreground">
+                  Mostrando {startIndex + 1} a {Math.min(endIndex, filteredVendas.length)} de {filteredVendas.length} pedidos
+                </p>
+
+                <div className="flex gap-2 flex-wrap justify-center">
+                  <Button
+                    variant="outline"
+                    size={isMobile ? 'sm' : 'sm'}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={isMobile ? 'text-xs px-2' : ''}
+                  >
+                    Anterior
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
                       let pageNum;
-                      if (totalPages <= 5) {
+                      const maxPages = isMobile ? 3 : 5;
+                      const halfMax = Math.floor(maxPages / 2);
+
+                      if (totalPages <= maxPages) {
                         pageNum = i + 1;
-                      } else if (currentPage <= 3) {
+                      } else if (currentPage <= halfMax + 1) {
                         pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
+                      } else if (currentPage >= totalPages - halfMax) {
+                        pageNum = totalPages - maxPages + i + 1;
                       } else {
-                        pageNum = currentPage - 2 + i;
+                        pageNum = currentPage - halfMax + i;
                       }
+
                       return (
-                        <Button key={pageNum} variant={currentPage === pageNum ? 'default' : 'outline'} size="sm" onClick={() => setCurrentPage(pageNum)}>{pageNum}</Button>
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? 'default' : 'outline'}
+                          size={isMobile ? 'sm' : 'sm'}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={isMobile ? 'h-8 w-8 p-0 text-xs' : ''}
+                        >
+                          {pageNum}
+                        </Button>
                       );
                     })}
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>Próxima</Button>
+                  <Button
+                    variant="outline"
+                    size={isMobile ? 'sm' : 'sm'}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={isMobile ? 'text-xs px-2' : ''}
+                  >
+                    Próxima
+                  </Button>
                 </div>
               </div>
             )}

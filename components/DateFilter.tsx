@@ -46,7 +46,7 @@ export function DateFilter({
     <Card>
       <CardContent className="pt-6">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm font-medium">Período:</span>
@@ -56,7 +56,7 @@ export function DateFilter({
                 <button
                   key={period.value}
                   onClick={() => onPeriodChange(period.value)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-md text-sm font-medium transition-colors ${
                     selectedPeriod === period.value
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -70,7 +70,7 @@ export function DateFilter({
 
           {/* Seletor de data customizado */}
           {selectedPeriod === 'custom' && onDateRangeChange && (
-            <div className="flex items-center gap-2 pl-2">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:pl-2">
               <span className="text-sm text-muted-foreground">Selecione o intervalo:</span>
               <CustomDatePicker
                 dateRange={customDateRange}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { calculateMetrics } from '@/lib/csvProcessor';
 import { DashboardMetrics } from '@/lib/types';
 import { MetricCard } from '@/components/MetricCard';
@@ -29,6 +29,18 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 export default function SistemaNovoDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('all');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(undefined);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Usar React Query hook
   const { data: allVendas, isLoading: loading, isError } = useSistemaNovoVendas();
@@ -123,16 +135,39 @@ export default function SistemaNovoDashboard() {
             <CardTitle>Vendas ao Longo do Tempo</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
               <LineChart data={metrics.vendasPorDia}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="data" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
+                <XAxis
+                  dataKey="data"
+                  tick={{ fontSize: isMobile ? 9 : 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={isMobile ? 60 : 80}
+                  interval={isMobile ? Math.floor(metrics.vendasPorDia.length / 5) : 'preserveStartEnd'}
+                />
+                <YAxis yAxisId="left" tick={{ fontSize: isMobile ? 10 : 12 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: isMobile ? 10 : 12 }} />
                 <Tooltip formatter={(value, name) => (name === 'total' ? formatCurrency(value as number) : value as number)} labelFormatter={(label) => `Data: ${label}`} />
-                <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="total" stroke="#8884d8" name="Receita (R$)" strokeWidth={2} />
-                <Line yAxisId="right" type="monotone" dataKey="quantidade" stroke="#82ca9d" name="Quantidade de Pedidos" strokeWidth={2} />
+                <Legend wrapperStyle={{ fontSize: isMobile ? '12px' : '14px' }} />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#8884d8"
+                  name="Receita (R$)"
+                  strokeWidth={isMobile ? 1.5 : 2}
+                  dot={!isMobile}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="quantidade"
+                  stroke="#82ca9d"
+                  name="Quantidade de Pedidos"
+                  strokeWidth={isMobile ? 1.5 : 2}
+                  dot={!isMobile}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>

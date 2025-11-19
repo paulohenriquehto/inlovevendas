@@ -14,8 +14,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DateFilter, PeriodFilter, DateRange, filterByPeriod } from '@/components/DateFilter';
-import { Search } from 'lucide-react';
+import { Search, MapPin } from 'lucide-react';
 import { OrderDetailsModal } from '@/components/OrderDetailsModal';
+import { Badge } from '@/components/ui/badge';
 
 export default function NuvemShoppingPedidosPage() {
   const [vendas, setVendas] = useState<Venda[]>([]);
@@ -30,6 +31,18 @@ export default function NuvemShoppingPedidosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string>('');
   const [selectedOrderItems, setSelectedOrderItems] = useState<Venda[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -176,114 +189,180 @@ export default function NuvemShoppingPedidosPage() {
           </CardContent>
         </Card>
 
-        {/* Tabela */}
+        {/* Tabela / Cards */}
         <Card>
           <CardHeader>
             <CardTitle>Detalhes dos Pedidos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pedido</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status Pgto</TableHead>
-                    <TableHead>Status Envio</TableHead>
-                    <TableHead>Canal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentVendas.map((venda, index) => (
-                    <TableRow 
-                      key={`${venda.numeroPedido}-${index}`}
-                      className="cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => handleOrderClick(venda.numeroPedido)}
-                    >
-                      <TableCell className="font-medium">#{venda.numeroPedido}</TableCell>
-                      <TableCell>{formatDate(venda.data)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{venda.nomeComprador}</span>
-                          <span className="text-xs text-muted-foreground">{venda.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {venda.cidade && venda.estado ? (
-                          <div className="flex flex-col">
-                            <span>{venda.cidade}</span>
-                            <span className="text-xs text-muted-foreground">{venda.estado}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">Retirada em loja</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{formatCurrency(venda.total)}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            venda.statusPagamento === 'Confirmado'
-                              ? 'bg-green-100 text-green-800'
-                              : venda.statusPagamento === 'Pendente'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {venda.statusPagamento}
-                        </span>
-                      </TableCell>
-                      <TableCell>{venda.statusEnvio}</TableCell>
-                      <TableCell>
-                        {venda.canal ? (
-                          <span>{venda.canal}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">Não informado</span>
-                        )}
-                      </TableCell>
+            {/* Desktop: Tabela */}
+            {!isMobile ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pedido</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Localização</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status Pgto</TableHead>
+                      <TableHead>Status Envio</TableHead>
+                      <TableHead>Canal</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {currentVendas.map((venda, index) => (
+                      <TableRow
+                        key={`${venda.numeroPedido}-${index}`}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => handleOrderClick(venda.numeroPedido)}
+                      >
+                        <TableCell className="font-medium">#{venda.numeroPedido}</TableCell>
+                        <TableCell>{formatDate(venda.data)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{venda.nomeComprador}</span>
+                            <span className="text-xs text-muted-foreground">{venda.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {venda.cidade && venda.estado ? (
+                            <div className="flex flex-col">
+                              <span>{venda.cidade}</span>
+                              <span className="text-xs text-muted-foreground">{venda.estado}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Retirada em loja</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{formatCurrency(venda.total)}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              venda.statusPagamento === 'Confirmado'
+                                ? 'bg-green-100 text-green-800'
+                                : venda.statusPagamento === 'Pendente'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {venda.statusPagamento}
+                          </span>
+                        </TableCell>
+                        <TableCell>{venda.statusEnvio}</TableCell>
+                        <TableCell>
+                          {venda.canal ? (
+                            <span>{venda.canal}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Não informado</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              /* Mobile: Cards */
+              <div className="space-y-4">
+                {currentVendas.map((venda, index) => (
+                  <div
+                    key={`${venda.numeroPedido}-${index}`}
+                    className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => handleOrderClick(venda.numeroPedido)}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-bold text-lg">#{venda.numeroPedido}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(venda.data)}</p>
+                      </div>
+                      <Badge
+                        variant={venda.statusPagamento === 'Confirmado' ? 'default' : 'secondary'}
+                        className={
+                          venda.statusPagamento === 'Confirmado'
+                            ? 'bg-green-100 text-green-800'
+                            : venda.statusPagamento === 'Pendente'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }
+                      >
+                        {venda.statusPagamento}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium">{venda.nomeComprador}</p>
+                        <p className="text-xs text-muted-foreground">{venda.email}</p>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-sm">
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                        {venda.cidade && venda.estado ? (
+                          <span>{venda.cidade}, {venda.estado}</span>
+                        ) : (
+                          <span className="italic text-muted-foreground">Retirada em loja</span>
+                        )}
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <span className="text-sm text-muted-foreground">Total</span>
+                        <span className="font-bold text-lg">{formatCurrency(venda.total)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Envio: {venda.statusEnvio}</span>
+                        {venda.canal && <span className="text-muted-foreground">Canal: {venda.canal}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Paginação */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
+              <div className="flex flex-col md:flex-row items-center justify-between mt-4 gap-3">
+                {/* Texto de informação - escondido no mobile */}
+                <p className="hidden md:block text-sm text-muted-foreground">
                   Mostrando {startIndex + 1} a {Math.min(endIndex, filteredVendas.length)} de{' '}
                   {filteredVendas.length} pedidos
                 </p>
-                <div className="flex gap-2">
+
+                <div className="flex gap-2 flex-wrap justify-center">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size={isMobile ? 'sm' : 'sm'}
                     onClick={() => setCurrentPage(currentPage - 1)}
                     disabled={currentPage === 1}
+                    className={isMobile ? 'text-xs px-2' : ''}
                   >
                     Anterior
                   </Button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
                       let pageNum;
-                      if (totalPages <= 5) {
+                      const maxPages = isMobile ? 3 : 5;
+                      const halfMax = Math.floor(maxPages / 2);
+
+                      if (totalPages <= maxPages) {
                         pageNum = i + 1;
-                      } else if (currentPage <= 3) {
+                      } else if (currentPage <= halfMax + 1) {
                         pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
+                      } else if (currentPage >= totalPages - halfMax) {
+                        pageNum = totalPages - maxPages + i + 1;
                       } else {
-                        pageNum = currentPage - 2 + i;
+                        pageNum = currentPage - halfMax + i;
                       }
 
                       return (
                         <Button
                           key={pageNum}
                           variant={currentPage === pageNum ? 'default' : 'outline'}
-                          size="sm"
+                          size={isMobile ? 'sm' : 'sm'}
                           onClick={() => setCurrentPage(pageNum)}
+                          className={isMobile ? 'h-8 w-8 p-0 text-xs' : ''}
                         >
                           {pageNum}
                         </Button>
@@ -292,9 +371,10 @@ export default function NuvemShoppingPedidosPage() {
                   </div>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size={isMobile ? 'sm' : 'sm'}
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
+                    className={isMobile ? 'text-xs px-2' : ''}
                   >
                     Próxima
                   </Button>
